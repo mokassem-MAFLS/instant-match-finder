@@ -1,6 +1,5 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
@@ -16,45 +15,43 @@ user_input = st.text_input("Enter SKU or Product URL")
 # Function to find replacement products
 def find_replacements(user_input):
     try:
-        # Set up headless Chrome browser
-        options = Options()
-        options.add_argument("--headless")
-        driver = webdriver.Chrome(options=options)
-
-        # Navigate to the product page or search page
+        # Determine the URL to fetch
         if "http" in user_input:
-            driver.get(user_input)
+            url = user_input
         else:
-            driver.get(f"https://www.cnb.com/search?q={user_input}")
+            url = f"https://www.cnb.com/search?q={user_input}"
 
-        # Parse the page content
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        # Fetch the page content
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Extract product attributes
-        color = soup.find("div", class_="color").text if soup.find("div", class_="color") else "Unknown"
-        dimensions = soup.find("div", class_="dimensions").text if soup.find("div", class_="dimensions") else "Unknown"
-        design = soup.find("div", class_="design").text if soup.find("div", class_="design") else "Unknown"
+        # Extract product attributes (adjust selectors as needed)
+        color = soup.find("div", class_="color")
+        dimensions = soup.find("div", class_="dimensions")
+        design = soup.find("div", class_="design")
 
-        driver.quit()
+        color_text = color.text.strip() if color else "Unknown"
+        dimensions_text = dimensions.text.strip() if dimensions else "Unknown"
+        design_text = design.text.strip() if design else "Unknown"
 
         # Mocked replacement suggestions
         replacements = [
             {
                 "Name": "Alternative Product A",
-                "Color": color,
-                "Dimensions": dimensions,
-                "Design": design,
+                "Color": color_text,
+                "Dimensions": dimensions_text,
+                "Design": design_text,
                 "Link": "https://www.cnb.com/productA"
             },
             {
                 "Name": "Alternative Product B",
-                "Color": color,
-                "Dimensions": dimensions,
-                "Design": design,
+                "Color": color_text,
+                "Dimensions": dimensions_text,
+                "Design": design_text,
                 "Link": "https://www.cnb.com/productB"
             }
         ]
-
         return pd.DataFrame(replacements)
 
     except Exception as e:
