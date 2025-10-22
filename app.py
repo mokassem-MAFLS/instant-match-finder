@@ -62,4 +62,3 @@ if user_input:
     st.info(f"Searching for replacements for: {user_input}")
     results_df = find_replacements(user_input)
     st.dataframe(results_df)
-``
