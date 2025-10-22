@@ -12,6 +12,22 @@ st.markdown("Enter a SKU or product URL to get replacement suggestions based on 
 # Input field for SKU or product URL
 user_input = st.text_input("Enter SKU or Product URL")
 
+# Function to fetch and parse product data using ScrapingBee API or fallback
+def fetch_product_data(url):
+    try:
+        # Use ScrapingBee API to fetch the page
+        api_key = "YOUR_SCRAPINGBEE_API_KEY"  # Replace with your actual API key
+        api_url = f"https://app.scrapingbee.com/api/v1/?api_key={api_key}&url={url}&render_js=False"
+        response = requests.get(api_url, timeout=15)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+    except Exception:
+        # Fallback to direct request for CB2.ae
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+    return soup
+
 # Function to find replacement products
 def find_replacements(user_input):
     try:
@@ -21,10 +37,7 @@ def find_replacements(user_input):
         else:
             url = f"https://www.crateandbarrel.me/en-ae/search?q={user_input}"
 
-        # Fetch the page content
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = fetch_product_data(url)
 
         # Extract product attributes from <ul><li>...</li></ul>
         attributes = soup.find_all("li")
